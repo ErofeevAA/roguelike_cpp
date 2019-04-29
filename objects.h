@@ -9,24 +9,41 @@ class Knight : MapObject {
  private:
   int x_ = 0;
   int y_ = 0;
-  int hp_ = 5;
+  const int max_hp = 5;
+  const int max_mp = 3;
+  int hp_ = max_hp;
+  int mp_ = max_mp;
  public:
   Knight() = default;
   void setCoord(int y, int x) {
     this->x_ = x;
     this->y_ = y;
   }
-  int getCoord_X() override {
+  int getCoord_X() override{
     return this->x_;
   }
-  int getCoord_Y() override {
+  int getCoord_Y() override{
     return this->y_;
   }
-  void wasAttacked() {
-    this->hp_ -= 1;
+  int getMP() {
+    return this->mp_;
   }
   int getHP() {
     return this->hp_;
+  }
+  int getMaxHP() {
+    return this->max_hp;
+  }
+  void setMP(int mp) {
+    this->mp_ = mp;
+  }
+  void wasAttacked(int d) {
+    this->hp_ -= d;
+  }
+  void upHP () {
+    if (this->hp_ < this->max_hp) {
+      this->hp_ += 1;
+    }
   }
 };
 
@@ -49,6 +66,68 @@ class Zombie : MapObject {
   }
   int getCoord_Y() override {
     return this->y_;
+  }
+  int getDamage() {
+    return 1;
+  }
+};
+
+class Dragon : MapObject{
+ private:
+  int x_ = 0;
+  int y_ = 0;
+  bool fire_ = false;
+ public:
+  void setCoord(int y, int x) {
+    this->x_ = x;
+    this->y_ = y;
+  }
+  int getCoord_X() override {
+    return this->x_;
+  }
+  int getCoord_Y() override {
+    return this->y_;
+  }
+  bool isFire() {
+    return this->fire_;
+  }
+  void changeFire() {
+    this->fire_ = !fire_;
+  }
+  int getDamage() {
+    return 2;
+  }
+};
+
+class Fire : MapObject{
+ private:
+  int x_ = 0;
+  int y_ = 0;
+  int hp_ = 3;
+  int side_ = 0;
+ public:
+  void setCoord(int y, int x) {
+    this->x_ = x;
+    this->y_ = y;
+    this->hp_ -= 1;
+  }
+  void setSide(int side) {
+    this->side_ = side;
+  }
+  int getCoord_X() override {
+    return this->x_;
+  }
+  int getCoord_Y() override {
+    return this->y_;
+  }
+  int getDamage() {
+    return 1;
+  }
+  bool isDestroy() {
+    return this->hp_ == 0;
+  }
+  int getSide(){
+    return this->side_;
   }
 };
 
