@@ -1,9 +1,11 @@
 #include <vector>
 #include <string>
 #include "objects.h"
+//#include "config_reader.h"
 
 class Game {
  private:
+  //ConfigReader configReader = ConfigReader();
   Knight knight = Knight();
   Princess princess = Princess();
   std::vector<Zombie> zombies;

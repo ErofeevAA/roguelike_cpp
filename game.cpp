@@ -2,6 +2,9 @@
 #include <ncurses.h>
 #include <vector>
 #include <string>
+#include <thread>
+#include <chrono>
+
 const int y_max = 20;
 int x_max = 40;
 const int esc = 27;
@@ -58,7 +61,7 @@ void Game::init() {
   int y = 3;
   int x = 7;
   mvprintw(y++, x, "***Battle for Et princeps Pisum***");
-  mvprintw(y++, x, "Your aim is save princess from zombies and dragons");
+  mvprintw(y++, x, "Your aim is saving princess from zombies and dragons");
   mvprintw(y++, x, "arrow to up(down, left, right) move");
   mvprintw(y++, x, "W shoot fire up");
   mvprintw(y++, x, "D shoot fire right");
@@ -75,6 +78,8 @@ void Game::start() {
   refresh();
   curs_set(0);
   keypad(stdscr, true);
+  //wait action from user (1 second)
+  halfdelay(10);
   int command = 0;
   while (command != esc) {
     drawGame();
@@ -100,18 +105,22 @@ void Game::start() {
     moveZombies();
     moveDragon();
     if (princess.isGetting()) {
+      nodelay(stdscr, false);
       endGame();
       win();
       break;
     }
-    if (knight.getHP() < 0) {
+    if (knight.getHP() < 1) {
+      nodelay(stdscr, false);
       endGame();
       lose();
       break;
     }
   }
+
   endwin();
 }
+
 void Game::moveZombies() {
   for (auto &z : zombies) {
     int side = rand() % 4;
@@ -142,6 +151,7 @@ void Game::moveZombies() {
     }
   }
 }
+
 void Game::moveKnight(int up, int down, int left, int right) {
   if (!collisionForKnight(knight.getCoord_Y() + up + down,
       knight.getCoord_X() + left + right)) {
@@ -151,6 +161,7 @@ void Game::moveKnight(int up, int down, int left, int right) {
     this->map[knight.getCoord_Y()][knight.getCoord_X()] = 'K';
   }
 }
+
 void Game::moveDragon() {
   for (auto &d : dragons) {
     if (!d.isFire()) {
@@ -193,54 +204,60 @@ void Game::moveDragon() {
     }
   }
 }
+
 void Game::moveFire() {
-  for (auto &f : fires) {
-    if (f.isDestroy()) {
-      killFire(f.getCoord_Y(), f.getCoord_X());
+  int i = 0;
+  while (i < fires.size()) {
+    if (fires[i].isDestroy()) {
+      killFire(fires[i].getCoord_Y(), fires[i].getCoord_X());
       continue;
     }
-    switch (f.getSide()) {
+    switch (fires[i].getSide()) {
       case 0:
-        if (!collisionForFire(f.getCoord_Y() - 1, f.getCoord_X())) {
-          this->map[f.getCoord_Y()][f.getCoord_X()] = '.';
-          f.setCoord(f.getCoord_Y() - 1, f.getCoord_X());
-          this->map[f.getCoord_Y()][f.getCoord_X()] = '*';
+        if (!collisionForFire(fires[i].getCoord_Y() - 1, fires[i].getCoord_X())) {
+          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '.';
+          fires[i].setCoord(fires[i].getCoord_Y() - 1, fires[i].getCoord_X());
+          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '*';
+          ++i;
         } else {
-          killFire(f.getCoord_Y(), f.getCoord_X());
-
+          killFire(fires[i].getCoord_Y(), fires[i].getCoord_X());
         }
         break;
       case 1:
-        if (!collisionForFire(f.getCoord_Y(), f.getCoord_X() + 1)) {
-          this->map[f.getCoord_Y()][f.getCoord_X()] = '.';
-          f.setCoord(f.getCoord_Y(), f.getCoord_X() + 1);
-          this->map[f.getCoord_Y()][f.getCoord_X()] = '*';
+        if (!collisionForFire(fires[i].getCoord_Y(), fires[i].getCoord_X() + 1)) {
+          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '.';
+          fires[i].setCoord(fires[i].getCoord_Y(), fires[i].getCoord_X() + 1);
+          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '*';
+          ++i;
         } else {
-          killFire(f.getCoord_Y(), f.getCoord_X());
+          killFire(fires[i].getCoord_Y(), fires[i].getCoord_X());
         }
         break;
       case 2:
-        if (!collisionForFire(f.getCoord_Y() + 1, f.getCoord_X())) {
-          this->map[f.getCoord_Y()][f.getCoord_X()] = '.';
-          f.setCoord(f.getCoord_Y() + 1, f.getCoord_X());
-          this->map[f.getCoord_Y()][f.getCoord_X()] = '*';
+        if (!collisionForFire(fires[i].getCoord_Y() + 1, fires[i].getCoord_X())) {
+          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '.';
+          fires[i].setCoord(fires[i].getCoord_Y() + 1, fires[i].getCoord_X());
+          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '*';
+          ++i;
         } else {
-          killFire(f.getCoord_Y(), f.getCoord_X());
+          killFire(fires[i].getCoord_Y(), fires[i].getCoord_X());
         }
         break;
       case 3:
-        if (!collisionForFire(f.getCoord_Y(), f.getCoord_X() - 1)) {
-          this->map[f.getCoord_Y()][f.getCoord_X()] = '.';
-          f.setCoord(f.getCoord_Y(), f.getCoord_X() - 1);
-          this->map[f.getCoord_Y()][f.getCoord_X()] = '*';
+        if (!collisionForFire(fires[i].getCoord_Y(), fires[i].getCoord_X() - 1)) {
+          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '.';
+          fires[i].setCoord(fires[i].getCoord_Y(), fires[i].getCoord_X() - 1);
+          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '*';
+          ++i;
         } else {
-          killFire(f.getCoord_Y(), f.getCoord_X());
+          killFire(fires[i].getCoord_Y(), fires[i].getCoord_X());
         }
         break;
-      default:break;
+      default: break;
     }
   }
 }
+
 bool Game::collisionForZombie(int y, int x) {
   if (this->map[y][x] == '#' || this->map[y][x] == 'P' ||
       this->map[y][x] == 'Z' || this->map[y][x] == 'A' ||
@@ -253,6 +270,7 @@ bool Game::collisionForZombie(int y, int x) {
     return false;
   }
 }
+
 bool Game::collisionForKnight(int y, int x) {
   if (this->map[y][x] == '#') {
     return true;
@@ -280,6 +298,7 @@ bool Game::collisionForKnight(int y, int x) {
     return false;
   }
 }
+
 bool Game::collisionForDragon(int y, int x) {
   if (this->map[y][x] == '#' || this->map[y][x] == 'D'  ||
       this->map[y][x] == 'A') {
@@ -294,9 +313,10 @@ bool Game::collisionForDragon(int y, int x) {
     knight.wasAttacked(dragons[0].getDamage());
     return true;
   } else {
-    return  false;
+    return false;
   }
 }
+
 bool Game::collisionForFire(int y, int x) {
   if (this->map[y][x] == '#' || this->map[y][x] == 'D' ||
       this->map[y][x] == 'A' || this->map[y][x] == 'P') {
@@ -308,9 +328,10 @@ bool Game::collisionForFire(int y, int x) {
     knight.wasAttacked(fires[0].getDamage());
     return true;
   } else {
-    return  false;
+    return false;
   }
 }
+
 bool Game::isMakingFire(int y, int x, int s) {
   if (this->map[y][x] == 'Z') {
     killZombie(y, x);
@@ -330,6 +351,7 @@ bool Game::isMakingFire(int y, int x, int s) {
     return true;
   }
 }
+
 void Game::killZombie(int y, int x) {
   this->map[y][x] = '.';
   for (int i = 0; i < zombies.size(); ++i) {
@@ -339,6 +361,7 @@ void Game::killZombie(int y, int x) {
     }
   }
 }
+
 void Game::killFire(int y, int x) {
   for (int i = 0; i < fires.size(); ++i) {
     if (fires[i].getCoord_Y() == y && fires[i].getCoord_X() == x) {
@@ -348,6 +371,7 @@ void Game::killFire(int y, int x) {
     }
   }
 }
+
 void Game::killDragon(int y, int x) {
   this->map[y][x] = '.';
   for (int i = 0; i < dragons.size(); ++i) {
@@ -357,6 +381,7 @@ void Game::killDragon(int y, int x) {
     }
   }
 }
+
 void Game::makeDragonFire(Dragon* dragon) {
   int s = 0;
   if (isMakingFire(dragon->getCoord_Y() - 1, dragon->getCoord_X(), s++)) {
@@ -369,23 +394,28 @@ void Game::makeDragonFire(Dragon* dragon) {
     //dummy
   }
 }
+
 void Game::makeKnightMagic(int up, int down, int left, int right) {
-  int s;
-  if (up != 0) {
-    s = 0;
-  } else if (right != 0) {
-    s = 1;
-  } else if (down != 0) {
-    s = 2;
-  } else {
-    s = 3;
-  }
-  if (isMakingFire(knight.getCoord_Y() + up + down,
-      knight.getCoord_X() + left + right, s)) {
+  if (knight.getMP() > 0) {
+    int s;
+    if (up != 0) {
+      s = 0;
+    } else if (right != 0) {
+      s = 1;
+    } else if (down != 0) {
+      s = 2;
+    } else {
+      s = 3;
+    }
+    if (isMakingFire(knight.getCoord_Y() + up + down,
+                     knight.getCoord_X() + left + right, s)) {
+      knight.setMP(knight.getMP() - 1);
+    }
   }
 }
+
 void Game::drawGame() {
-  refresh();
+  clear();
   for (int i = 0; i < y_max; ++i) {
     mvprintw(i, 0, this->map[i]);
   }
@@ -393,15 +423,18 @@ void Game::drawGame() {
   mvprintw(8, x_max + 1, "MP: %d", knight.getMP());
   move(0,0);
 }
+
 void Game::endGame() {
   clear();
   mvprintw(10, 8, "Game Over");
   mvprintw(20, 9, "press any key to exit");
 }
+
 void Game::win() {
   mvprintw(11, 9, "You win");
   getch();
 }
+
 void Game::lose() {
   mvprintw(11, 9, "You lose");
   getch();

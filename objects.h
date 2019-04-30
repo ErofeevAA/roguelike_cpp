@@ -9,8 +9,8 @@ class Knight : MapObject {
  private:
   int x_ = 0;
   int y_ = 0;
-  const int max_hp = 5;
-  const int max_mp = 3;
+  const int max_hp = 10;
+  const int max_mp = 10;
   int hp_ = max_hp;
   int mp_ = max_mp;
  public:
