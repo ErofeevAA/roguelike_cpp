@@ -57,7 +57,7 @@ void Game::start() {
   curs_set(0);
   keypad(stdscr, true);
   //wait action from user (1 second)
-  halfdelay(10);
+  halfdelay(5);
   int command = 0;
   while (command != conf.configJson["Key"]["esc"]) {
     drawGame();
@@ -102,32 +102,13 @@ void Game::start() {
 }
 
 void Game::moveZombies() {
+  int m[4][2] = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
   for (auto &z : zombies) {
     int side = rand() % 4;
-    if (side == conf.configJson["Side"]["up"]) {
-      if (!collisionForZombie(z.getCoord_Y() - 1, z.getCoord_X())) {
-        this->map[z.getCoord_Y()][z.getCoord_X()] = sym_empty;
-        z.setCoord(z.getCoord_Y() - 1, z.getCoord_X());
-        this->map[z.getCoord_Y()][z.getCoord_X()] = sym_zombie;
-      }
-    } else if (side == conf.configJson["Side"]["right"]) {
-      if (!collisionForZombie(z.getCoord_Y(), z.getCoord_X() + 1)) {
-        this->map[z.getCoord_Y()][z.getCoord_X()] = sym_empty;
-        z.setCoord(z.getCoord_Y(), z.getCoord_X() + 1);
-        this->map[z.getCoord_Y()][z.getCoord_X()] = sym_zombie;
-      }
-    } else if (side == conf.configJson["Side"]["down"]) {
-      if (!collisionForZombie(z.getCoord_Y() + 1, z.getCoord_X())) {
-        this->map[z.getCoord_Y()][z.getCoord_X()] = sym_empty;
-        z.setCoord(z.getCoord_Y() + 1, z.getCoord_X());
-        this->map[z.getCoord_Y()][z.getCoord_X()] = sym_zombie;
-      }
-    } else if (side == conf.configJson["Side"]["left"]) {
-      if (!collisionForZombie(z.getCoord_Y(), z.getCoord_X() - 1)) {
-        this->map[z.getCoord_Y()][z.getCoord_X()] = sym_empty;
-        z.setCoord(z.getCoord_Y(), z.getCoord_X() - 1);
-        this->map[z.getCoord_Y()][z.getCoord_X()] = sym_zombie;
-      }
+    if (!collisionForZombie(z.getCoord_Y() + m[side][0], z.getCoord_X() + m[side][1])) {
+      this->map[z.getCoord_Y()][z.getCoord_X()] = sym_empty;
+      z.setCoord(z.getCoord_Y() + m[side][0], z.getCoord_X() + m[side][1]);
+      this->map[z.getCoord_Y()][z.getCoord_X()] = sym_zombie;
     }
   }
 }
@@ -143,39 +124,14 @@ void Game::moveKnight(int up, int down, int left, int right) {
 }
 
 void Game::moveDragon() {
+  int m[4][2] = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
   for (auto &d : dragons) {
     if (!d.isFire()) {
       int side = rand() % 4;
-      switch (side) {
-        case 0:
-          if (!collisionForDragon(d.getCoord_Y() - 1, d.getCoord_X())) {
-            this->map[d.getCoord_Y()][d.getCoord_X()] = sym_empty;
-            d.setCoord(d.getCoord_Y() - 1, d.getCoord_X());
-            this->map[d.getCoord_Y()][d.getCoord_X()] = sym_dragon;
-          }
-          break;
-        case 1:
-          if (!collisionForDragon(d.getCoord_Y() , d.getCoord_X() + 1)) {
-            this->map[d.getCoord_Y()][d.getCoord_X()] = sym_empty;
-            d.setCoord(d.getCoord_Y(), d.getCoord_X() + 1);
-            this->map[d.getCoord_Y()][d.getCoord_X()] = sym_dragon;
-          }
-          break;
-        case 2:
-          if (!collisionForDragon(d.getCoord_Y() + 1, d.getCoord_X())) {
-            this->map[d.getCoord_Y()][d.getCoord_X()] = sym_empty;
-            d.setCoord(d.getCoord_Y() + 1, d.getCoord_X());
-            this->map[d.getCoord_Y()][d.getCoord_X()] = sym_dragon;
-          }
-          break;
-        case 3:
-          if (!collisionForDragon(d.getCoord_Y(), d.getCoord_X() - 1)) {
-            this->map[d.getCoord_Y()][d.getCoord_X()] = sym_empty;
-            d.setCoord(d.getCoord_Y(), d.getCoord_X() - 1);
-            this->map[d.getCoord_Y()][d.getCoord_X()] = sym_dragon;
-          }
-          break;
-        default:break;
+      if (!collisionForDragon(d.getCoord_Y() + m[side][0], d.getCoord_X() + m[side][1])) {
+        this->map[d.getCoord_Y()][d.getCoord_X()] = sym_empty;
+        d.setCoord(d.getCoord_Y() + m[side][0], d.getCoord_X() + m[side][1]);
+        this->map[d.getCoord_Y()][d.getCoord_X()] = sym_dragon;
       }
       d.changeFire();
     } else {
@@ -186,54 +142,22 @@ void Game::moveDragon() {
 }
 
 void Game::moveFire() {
+  int m[4][2] = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
   int i = 0;
   while (i < fires.size()) {
     if (fires[i].isDestroy()) {
       killFire(fires[i].getCoord_Y(), fires[i].getCoord_X());
       continue;
     }
-    switch (fires[i].getSide()) {
-      case 0:
-        if (!collisionForFire(fires[i].getCoord_Y() - 1, fires[i].getCoord_X())) {
-          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_empty;
-          fires[i].setCoord(fires[i].getCoord_Y() - 1, fires[i].getCoord_X());
-          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_fire;
-          ++i;
-        } else {
-          killFire(fires[i].getCoord_Y(), fires[i].getCoord_X());
-        }
-        break;
-      case 1:
-        if (!collisionForFire(fires[i].getCoord_Y(), fires[i].getCoord_X() + 1)) {
-          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_empty;
-          fires[i].setCoord(fires[i].getCoord_Y(), fires[i].getCoord_X() + 1);
-          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_fire;
-          ++i;
-        } else {
-          killFire(fires[i].getCoord_Y(), fires[i].getCoord_X());
-        }
-        break;
-      case 2:
-        if (!collisionForFire(fires[i].getCoord_Y() + 1, fires[i].getCoord_X())) {
-          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_empty;
-          fires[i].setCoord(fires[i].getCoord_Y() + 1, fires[i].getCoord_X());
-          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_fire;
-          ++i;
-        } else {
-          killFire(fires[i].getCoord_Y(), fires[i].getCoord_X());
-        }
-        break;
-      case 3:
-        if (!collisionForFire(fires[i].getCoord_Y(), fires[i].getCoord_X() - 1)) {
-          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_empty;
-          fires[i].setCoord(fires[i].getCoord_Y(), fires[i].getCoord_X() - 1);
-          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_fire;
-          ++i;
-        } else {
-          killFire(fires[i].getCoord_Y(), fires[i].getCoord_X());
-        }
-        break;
-      default: break;
+    if (!collisionForFire(fires[i].getCoord_Y() + m[fires[i].getSide()][0],
+        fires[i].getCoord_X() + m[fires[i].getSide()][1])) {
+      this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_empty;
+      fires[i].setCoord(fires[i].getCoord_Y() + m[fires[i].getSide()][0],
+          fires[i].getCoord_X() + m[fires[i].getSide()][1]);
+      this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_fire;
+      ++i;
+    } else {
+      killFire(fires[i].getCoord_Y(), fires[i].getCoord_X());
     }
   }
 }
