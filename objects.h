@@ -9,12 +9,17 @@ class Knight : MapObject {
  private:
   int x_ = 0;
   int y_ = 0;
-  const int max_hp = 10;
-  const int max_mp = 10;
+  int max_hp = 10;
+  int max_mp = 10;
   int hp_ = max_hp;
   int mp_ = max_mp;
  public:
-  Knight() = default;
+  Knight(int hp, int mp) {
+    this->hp_ = hp;
+    this->mp_ = mp;
+    this->max_hp = hp;
+    this->max_mp = mp;
+  }
   void setCoord(int y, int x) {
     this->x_ = x;
     this->y_ = y;
@@ -106,6 +111,9 @@ class Fire : MapObject{
   int hp_ = 3;
   int side_ = 0;
  public:
+  explicit Fire(int hp) {
+    this->hp_ = hp;
+  }
   void setCoord(int y, int x) {
     this->x_ = x;
     this->y_ = y;

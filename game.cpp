@@ -1,55 +1,33 @@
 #include "game.h"
-#include <ncurses.h>
-#include <vector>
-#include <string>
-#include <thread>
-#include <chrono>
 
-const int y_max = 20;
-int x_max = 40;
-const int esc = 27;
-const int letter_w = 119;
-const int letter_a = 97;
-const int letter_s = 115;
-const int letter_d = 100;
+#include <ncurses.h>
+
+//#include <vector>
+#include <iostream>
+
 
 void Game::loadMap() {
-  std::string str_map[y_max] = {"##########################################",
-                                "#.K.#.......#........#.....Z......###....#",
-                                "#...#.Z...Z........................#.....#",
-                                "#...............#.......Z.......##....Z..#",
-                                "###........Z....#...A............##..Z...#",
-                                "#..#..##########.........Z...............#",
-                                "#....Z........Z....#..D.........Z........#",
-                                "#......Z..........Z........#.............#",
-                                "##..#........#Z.............#....Z.......#",
-                                "#..Z#.....Z.....#.....#......#.....#.....#",
-                                "#...#...........#.......Z...............##",
-                                "#..........#....#....Z...........Z.......#",
-                                "#...#........Z.......############....#...#",
-                                "#......Z........Z....#.....D............##",
-                                "#.............Z.......Z...........Z.....##",
-                                "#....Z.....Z....Z...............Z.##.Z..##",
-                                "#....Z.............##.....#...####.#######",
-                                "#.A......#........#.......########......P#",
-                                "#.....Z.........Z.....D............#.....#",
-                                "##########################################"};
-  x_max = static_cast<int>(str_map[0].size());
-  for (int i = 0; i < y_max; ++i) {
-    for (int j = 0; j < x_max ; ++j) {
-      this->map[i][j] = str_map[i][j];
-      if (this->map[i][j] == 'K') {
+  std::ifstream file_in("map.txt");
+  int i = 0;
+  while (!file_in.eof()) {
+    std:: string str;
+    file_in >> str;
+    this->map.push_back(std::vector<char>());
+    for (int j = 0; j < str.size(); ++j) {
+      this->map[i].push_back(str[j]);
+      if (this->map[i][j] == sym_knight) {
         knight.setCoord(i, j);
-      } else if (this->map[i][j] == 'Z') {
+      } else if (this->map[i][j] == sym_zombie) {
         Zombie z = Zombie();
         z.setCoord(i, j);
         zombies.push_back(z);
-      } else if (this->map[i][j] == 'D') {
+      } else if (this->map[i][j] == sym_dragon) {
         Dragon d = Dragon();
         d.setCoord(i, j);
         dragons.push_back(d);
       }
     }
+    ++i;
   }
 }
 
@@ -81,7 +59,7 @@ void Game::start() {
   //wait action from user (1 second)
   halfdelay(10);
   int command = 0;
-  while (command != esc) {
+  while (command != conf.configJson["Key"]["esc"]) {
     drawGame();
     command = getch();
     //mvprintw(21, 2, "%d", command);
@@ -93,12 +71,14 @@ void Game::start() {
       int left = -1 * (command == KEY_LEFT);
       int right = (command == KEY_RIGHT);
       moveKnight(up, down, left, right);
-    } else if (command == letter_w || command == letter_s ||
-               command == letter_a || command == letter_d) {
-      int fireUp = -1 * (command == letter_w);
-      int fireDown = (command == letter_s);
-      int fireLeft  = -1 * (command == letter_a);
-      int fireRight = (command == letter_d);
+    } else if (command == conf.configJson["Key"]["w"] ||
+               command == conf.configJson["Key"]["s"] ||
+               command == conf.configJson["Key"]["a"] ||
+               command == conf.configJson["Key"]["d"]) {
+      int fireUp = -1 * (command == conf.configJson["Key"]["w"]);
+      int fireDown = (command == conf.configJson["Key"]["s"]);
+      int fireLeft  = -1 * (command == conf.configJson["Key"]["a"]);
+      int fireRight = (command == conf.configJson["Key"]["d"]);
       //mvprintw(0, x_max + 1, "%d %d %d %d", fireUp, fireDown, fireLeft, fireRight);
       makeKnightMagic(fireUp, fireDown, fireLeft, fireRight);
     }
@@ -124,29 +104,29 @@ void Game::start() {
 void Game::moveZombies() {
   for (auto &z : zombies) {
     int side = rand() % 4;
-    if (side == 0) {
+    if (side == conf.configJson["Side"]["up"]) {
       if (!collisionForZombie(z.getCoord_Y() - 1, z.getCoord_X())) {
-        this->map[z.getCoord_Y()][z.getCoord_X()] = '.';
+        this->map[z.getCoord_Y()][z.getCoord_X()] = sym_empty;
         z.setCoord(z.getCoord_Y() - 1, z.getCoord_X());
-        this->map[z.getCoord_Y()][z.getCoord_X()] = 'Z';
+        this->map[z.getCoord_Y()][z.getCoord_X()] = sym_zombie;
       }
-    } else if (side == 1) {
+    } else if (side == conf.configJson["Side"]["right"]) {
       if (!collisionForZombie(z.getCoord_Y(), z.getCoord_X() + 1)) {
-        this->map[z.getCoord_Y()][z.getCoord_X()] = '.';
+        this->map[z.getCoord_Y()][z.getCoord_X()] = sym_empty;
         z.setCoord(z.getCoord_Y(), z.getCoord_X() + 1);
-        this->map[z.getCoord_Y()][z.getCoord_X()] = 'Z';
+        this->map[z.getCoord_Y()][z.getCoord_X()] = sym_zombie;
       }
-    } else if (side == 2) {
+    } else if (side == conf.configJson["Side"]["down"]) {
       if (!collisionForZombie(z.getCoord_Y() + 1, z.getCoord_X())) {
-        this->map[z.getCoord_Y()][z.getCoord_X()] = '.';
+        this->map[z.getCoord_Y()][z.getCoord_X()] = sym_empty;
         z.setCoord(z.getCoord_Y() + 1, z.getCoord_X());
-        this->map[z.getCoord_Y()][z.getCoord_X()] = 'Z';
+        this->map[z.getCoord_Y()][z.getCoord_X()] = sym_zombie;
       }
-    } else if (side == 3) {
+    } else if (side == conf.configJson["Side"]["left"]) {
       if (!collisionForZombie(z.getCoord_Y(), z.getCoord_X() - 1)) {
-        this->map[z.getCoord_Y()][z.getCoord_X()] = '.';
+        this->map[z.getCoord_Y()][z.getCoord_X()] = sym_empty;
         z.setCoord(z.getCoord_Y(), z.getCoord_X() - 1);
-        this->map[z.getCoord_Y()][z.getCoord_X()] = 'Z';
+        this->map[z.getCoord_Y()][z.getCoord_X()] = sym_zombie;
       }
     }
   }
@@ -155,10 +135,10 @@ void Game::moveZombies() {
 void Game::moveKnight(int up, int down, int left, int right) {
   if (!collisionForKnight(knight.getCoord_Y() + up + down,
       knight.getCoord_X() + left + right)) {
-    this->map[knight.getCoord_Y()][knight.getCoord_X()] = '.';
+    this->map[knight.getCoord_Y()][knight.getCoord_X()] = sym_empty;
     knight.setCoord(knight.getCoord_Y() + up + down,
                     knight.getCoord_X() + left + right);
-    this->map[knight.getCoord_Y()][knight.getCoord_X()] = 'K';
+    this->map[knight.getCoord_Y()][knight.getCoord_X()] = sym_knight;
   }
 }
 
@@ -169,30 +149,30 @@ void Game::moveDragon() {
       switch (side) {
         case 0:
           if (!collisionForDragon(d.getCoord_Y() - 1, d.getCoord_X())) {
-            this->map[d.getCoord_Y()][d.getCoord_X()] = '.';
+            this->map[d.getCoord_Y()][d.getCoord_X()] = sym_empty;
             d.setCoord(d.getCoord_Y() - 1, d.getCoord_X());
-            this->map[d.getCoord_Y()][d.getCoord_X()] = 'D';
+            this->map[d.getCoord_Y()][d.getCoord_X()] = sym_dragon;
           }
           break;
         case 1:
           if (!collisionForDragon(d.getCoord_Y() , d.getCoord_X() + 1)) {
-            this->map[d.getCoord_Y()][d.getCoord_X()] = '.';
+            this->map[d.getCoord_Y()][d.getCoord_X()] = sym_empty;
             d.setCoord(d.getCoord_Y(), d.getCoord_X() + 1);
-            this->map[d.getCoord_Y()][d.getCoord_X()] = 'D';
+            this->map[d.getCoord_Y()][d.getCoord_X()] = sym_dragon;
           }
           break;
         case 2:
           if (!collisionForDragon(d.getCoord_Y() + 1, d.getCoord_X())) {
-            this->map[d.getCoord_Y()][d.getCoord_X()] = '.';
+            this->map[d.getCoord_Y()][d.getCoord_X()] = sym_empty;
             d.setCoord(d.getCoord_Y() + 1, d.getCoord_X());
-            this->map[d.getCoord_Y()][d.getCoord_X()] = 'D';
+            this->map[d.getCoord_Y()][d.getCoord_X()] = sym_dragon;
           }
           break;
         case 3:
           if (!collisionForDragon(d.getCoord_Y(), d.getCoord_X() - 1)) {
-            this->map[d.getCoord_Y()][d.getCoord_X()] = '.';
+            this->map[d.getCoord_Y()][d.getCoord_X()] = sym_empty;
             d.setCoord(d.getCoord_Y(), d.getCoord_X() - 1);
-            this->map[d.getCoord_Y()][d.getCoord_X()] = 'D';
+            this->map[d.getCoord_Y()][d.getCoord_X()] = sym_dragon;
           }
           break;
         default:break;
@@ -215,9 +195,9 @@ void Game::moveFire() {
     switch (fires[i].getSide()) {
       case 0:
         if (!collisionForFire(fires[i].getCoord_Y() - 1, fires[i].getCoord_X())) {
-          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '.';
+          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_empty;
           fires[i].setCoord(fires[i].getCoord_Y() - 1, fires[i].getCoord_X());
-          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '*';
+          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_fire;
           ++i;
         } else {
           killFire(fires[i].getCoord_Y(), fires[i].getCoord_X());
@@ -225,9 +205,9 @@ void Game::moveFire() {
         break;
       case 1:
         if (!collisionForFire(fires[i].getCoord_Y(), fires[i].getCoord_X() + 1)) {
-          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '.';
+          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_empty;
           fires[i].setCoord(fires[i].getCoord_Y(), fires[i].getCoord_X() + 1);
-          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '*';
+          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_fire;
           ++i;
         } else {
           killFire(fires[i].getCoord_Y(), fires[i].getCoord_X());
@@ -235,9 +215,9 @@ void Game::moveFire() {
         break;
       case 2:
         if (!collisionForFire(fires[i].getCoord_Y() + 1, fires[i].getCoord_X())) {
-          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '.';
+          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_empty;
           fires[i].setCoord(fires[i].getCoord_Y() + 1, fires[i].getCoord_X());
-          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '*';
+          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_fire;
           ++i;
         } else {
           killFire(fires[i].getCoord_Y(), fires[i].getCoord_X());
@@ -245,9 +225,9 @@ void Game::moveFire() {
         break;
       case 3:
         if (!collisionForFire(fires[i].getCoord_Y(), fires[i].getCoord_X() - 1)) {
-          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '.';
+          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_empty;
           fires[i].setCoord(fires[i].getCoord_Y(), fires[i].getCoord_X() - 1);
-          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '*';
+          this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_fire;
           ++i;
         } else {
           killFire(fires[i].getCoord_Y(), fires[i].getCoord_X());
@@ -259,11 +239,11 @@ void Game::moveFire() {
 }
 
 bool Game::collisionForZombie(int y, int x) {
-  if (this->map[y][x] == '#' || this->map[y][x] == 'P' ||
-      this->map[y][x] == 'Z' || this->map[y][x] == 'A' ||
-      this->map[y][x] == '*' || this->map[y][x] == 'D') {
+  if (this->map[y][x] == sym_wall || this->map[y][x] == sym_princess ||
+      this->map[y][x] == sym_zombie || this->map[y][x] == sym_aidkit ||
+      this->map[y][x] == sym_fire || this->map[y][x] == sym_dragon ) {
     return true;
-  } else if (this->map[y][x] == 'K') {
+  } else if (this->map[y][x] == sym_knight) {
     knight.wasAttacked(zombies[0].getDamage());
     return true;
   } else {
@@ -272,22 +252,22 @@ bool Game::collisionForZombie(int y, int x) {
 }
 
 bool Game::collisionForKnight(int y, int x) {
-  if (this->map[y][x] == '#') {
+  if (this->map[y][x] == sym_wall) {
     return true;
-  } else if (this->map[y][x] == 'D') {
+  } else if (this->map[y][x] == sym_dragon) {
     killDragon(y, x);
     return true;
-  } else if (this->map[y][x] == '*' ) {
+  } else if (this->map[y][x] == sym_fire ) {
     knight.wasAttacked(fires[0].getDamage());
     killFire(y, x);
     return false;
-  } else if (this->map[y][x] == 'P') {
+  } else if (this->map[y][x] == sym_princess) {
     princess.setGetting();
     return true;
-  } else if (this->map[y][x] == 'Z') {
+  } else if (this->map[y][x] == sym_zombie) {
     killZombie(y, x);
     return true;
-  } else if (this->map[y][x] == 'A') {
+  } else if (this->map[y][x] == sym_aidkit) {
     if (knight.getHP() < knight.getMaxHP()) {
       knight.upHP();
       return false;
@@ -300,16 +280,16 @@ bool Game::collisionForKnight(int y, int x) {
 }
 
 bool Game::collisionForDragon(int y, int x) {
-  if (this->map[y][x] == '#' || this->map[y][x] == 'D'  ||
-      this->map[y][x] == 'A') {
+  if (this->map[y][x] == sym_wall || this->map[y][x] == sym_dragon  ||
+      this->map[y][x] == sym_aidkit || this->map[y][x] == sym_princess) {
     return  true;
-  } else if (this->map[y][x] == 'Z') {
+  } else if (this->map[y][x] == sym_zombie) {
     killZombie(y, x);
     return true;
-  } else if (this->map[y][x] == '*') {
+  } else if (this->map[y][x] == sym_fire) {
     killFire(y, x);
     return true;
-  } else if (this->map[y][x] == 'K') {
+  } else if (this->map[y][x] == sym_knight) {
     knight.wasAttacked(dragons[0].getDamage());
     return true;
   } else {
@@ -318,13 +298,13 @@ bool Game::collisionForDragon(int y, int x) {
 }
 
 bool Game::collisionForFire(int y, int x) {
-  if (this->map[y][x] == '#' || this->map[y][x] == 'D' ||
-      this->map[y][x] == 'A' || this->map[y][x] == 'P') {
+  if (this->map[y][x] == sym_wall || this->map[y][x] == sym_dragon  ||
+      this->map[y][x] == sym_aidkit || this->map[y][x] == sym_princess) {
     return  true;
-  } else if (this->map[y][x] == 'Z') {
+  } else if (this->map[y][x] == sym_zombie) {
     killZombie(y, x);
     return true;
-  } else if (this->map[y][x] == 'K') {
+  } else if (this->map[y][x] == sym_knight) {
     knight.wasAttacked(fires[0].getDamage());
     return true;
   } else {
@@ -333,27 +313,28 @@ bool Game::collisionForFire(int y, int x) {
 }
 
 bool Game::isMakingFire(int y, int x, int s) {
-  if (this->map[y][x] == 'Z') {
+  if (this->map[y][x] == sym_zombie) {
     killZombie(y, x);
     return true;
-  } else if (this->map[y][x] == 'K') {
+  } else if (this->map[y][x] == sym_fire) {
     knight.wasAttacked(fires[0].getDamage());
     return true;
-  } else if (this->map[y][x] == 'P' || this->map[y][x] == '#' ||
-      this->map[y][x] == 'A'|| this->map[y][x] == 'D') {
+  } else if (this->map[y][x] == sym_princess || this->map[y][x] == sym_wall ||
+      this->map[y][x] == sym_aidkit || this->map[y][x] == sym_dragon) {
     return false;
   } else {
-    Fire fire = Fire();
+    int h = conf.configJson["Fire"]["hp"];
+    Fire fire = Fire(h);
     fire.setCoord(y, x);
     fire.setSide(s);
     fires.push_back(fire);
-    this->map[y][x] = '*';
+    this->map[y][x] = sym_fire;
     return true;
   }
 }
 
 void Game::killZombie(int y, int x) {
-  this->map[y][x] = '.';
+  this->map[y][x] = sym_empty;
   for (int i = 0; i < zombies.size(); ++i) {
     if (zombies[i].getCoord_Y() == y && zombies[i].getCoord_X() == x) {
       zombies.erase(zombies.begin() + i);
@@ -365,7 +346,7 @@ void Game::killZombie(int y, int x) {
 void Game::killFire(int y, int x) {
   for (int i = 0; i < fires.size(); ++i) {
     if (fires[i].getCoord_Y() == y && fires[i].getCoord_X() == x) {
-      this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = '.';
+      this->map[fires[i].getCoord_Y()][fires[i].getCoord_X()] = sym_empty;
       fires.erase(fires.begin() + i);
       break;
     }
@@ -373,7 +354,7 @@ void Game::killFire(int y, int x) {
 }
 
 void Game::killDragon(int y, int x) {
-  this->map[y][x] = '.';
+  this->map[y][x] = sym_empty;
   for (int i = 0; i < dragons.size(); ++i) {
     if (dragons[i].getCoord_Y() == y && dragons[i].getCoord_X() == x) {
       dragons.erase(dragons.begin() + i);
@@ -383,16 +364,27 @@ void Game::killDragon(int y, int x) {
 }
 
 void Game::makeDragonFire(Dragon* dragon) {
-  int s = 0;
-  if (isMakingFire(dragon->getCoord_Y() - 1, dragon->getCoord_X(), s++)) {
-    //dummy
-  } else if (isMakingFire(dragon->getCoord_Y(), dragon->getCoord_X() + 1, s++)) {
-    //dummy
-  } else if (isMakingFire(dragon->getCoord_Y() + 1, dragon->getCoord_X(), s++)) {
-    //dummy
-  } else if (isMakingFire(dragon->getCoord_Y(), dragon->getCoord_X() - 1, s)) {
-    //dummy
+
+  if (!tryRandomDragonFire(dragon)) {
+    int s = 0;
+    if (isMakingFire(dragon->getCoord_Y() - 1, dragon->getCoord_X(), s++)) {
+      //dummy
+    } else if (isMakingFire(dragon->getCoord_Y(), dragon->getCoord_X() + 1, s++)) {
+      //dummy
+    } else if (isMakingFire(dragon->getCoord_Y() + 1, dragon->getCoord_X(), s++)) {
+      //dummy
+    } else if (isMakingFire(dragon->getCoord_Y(), dragon->getCoord_X() - 1, s)) {
+      //dummy
+    }
   }
+}
+
+bool Game::tryRandomDragonFire(Dragon *dragon) {
+  int s = rand() % 4;
+  return (s == 0 && isMakingFire(dragon->getCoord_Y() - 1, dragon->getCoord_X(), s)) ||
+    (s == 1 && isMakingFire(dragon->getCoord_Y(), dragon->getCoord_X() + 1, s)) ||
+    (s == 2 && isMakingFire(dragon->getCoord_Y() + 1, dragon->getCoord_X(), s)) ||
+    (s == 3 && isMakingFire(dragon->getCoord_Y(), dragon->getCoord_X() - 1, s));
 }
 
 void Game::makeKnightMagic(int up, int down, int left, int right) {
@@ -415,12 +407,17 @@ void Game::makeKnightMagic(int up, int down, int left, int right) {
 }
 
 void Game::drawGame() {
-  clear();
-  for (int i = 0; i < y_max; ++i) {
-    mvprintw(i, 0, this->map[i]);
+  //clear();
+  for (int i = 0; i < map.size(); ++i) {
+    for (int j = 0; j < map[i].size(); ++j) {
+      char c = this->map[i][j];
+      mvprintw(i, j, &c);
+    }
+    mvprintw(i, static_cast<int>(map[0].size()), "  ");
   }
-  mvprintw(7, x_max + 1, "HP: %d", knight.getHP());
-  mvprintw(8, x_max + 1, "MP: %d", knight.getMP());
+
+  mvprintw(7, static_cast<int>(map[0].size() + 2), "HP: %d", knight.getHP());
+  mvprintw(8, static_cast<int>(map[0].size() + 2), "MP: %d", knight.getMP());
   move(0,0);
 }
 

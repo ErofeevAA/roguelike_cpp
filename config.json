@@ -1,0 +1,42 @@
+{
+ "Key" : {
+  "w": 119,
+  "d": 100,
+  "s": 115,
+  "a": 97,
+  "esc": 27
+ },
+ "Side" : {
+ "up": 0,
+ "right": 1,
+ "down": 2,
+ "left": 3
+ },
+ "Wall": {
+ "symbol": 35
+ },
+ "Empty": {
+ "symbol": 46
+ },
+ "Knight": {
+ "hp": 9,
+ "mp": 9,
+ "symbol": 75
+ },
+ "Zombie": {
+ "symbol": 90
+ },
+ "Dragon": {
+ "symbol": 68
+ },
+ "Princess": {
+ "symbol": 80
+ },
+ "Fire": {
+  "hp": 3,
+ "symbol": 42
+ },
+ "Aidkit": {
+ "symbol": 65
+ }
+}
