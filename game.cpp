@@ -2,7 +2,6 @@
 
 #include <ncurses.h>
 
-//#include <vector>
 #include <iostream>
 
 
@@ -12,7 +11,7 @@ void Game::loadMap() {
   while (!file_in.eof()) {
     std:: string str;
     file_in >> str;
-    this->map.push_back(std::vector<char>());
+    this->map.emplace_back();
     for (int j = 0; j < str.size(); ++j) {
       this->map[i].push_back(str[j]);
       if (this->map[i][j] == sym_knight) {
@@ -35,7 +34,7 @@ void Game::init() {
   loadMap();
   initscr();
   noecho();
-  refresh();
+  curs_set(0);
   int y = 3;
   int x = 7;
   mvprintw(y++, x, "***Battle for Et princeps Pisum***");
@@ -54,9 +53,8 @@ void Game::init() {
 
 void Game::start() {
   refresh();
-  curs_set(0);
   keypad(stdscr, true);
-  //wait action from user (1 second)
+  //wait action from user (0.5 second)
   halfdelay(5);
   int command = 0;
   while (command != conf.configJson["Key"]["esc"]) {
@@ -80,18 +78,22 @@ void Game::start() {
       int fireLeft  = -1 * (command == conf.configJson["Key"]["a"]);
       int fireRight = (command == conf.configJson["Key"]["d"]);
       //mvprintw(0, x_max + 1, "%d %d %d %d", fireUp, fireDown, fireLeft, fireRight);
-      makeKnightMagic(fireUp, fireDown, fireLeft, fireRight);
+      int side = 0;
+       side += 1 * (command == conf.configJson["Key"]["d"]);
+       side += 2 * (command == conf.configJson["Key"]["s"]);
+       side += 3 * (command == conf.configJson["Key"]["a"]);
+      makeKnightMagic(fireUp + fireDown, fireLeft + fireRight, side);
     }
     moveZombies();
     moveDragon();
     if (princess.isGetting()) {
-      nodelay(stdscr, false);
+      halfdelay(100);
       endGame();
       win();
       break;
     }
     if (knight.getHP() < 1) {
-      nodelay(stdscr, false);
+      halfdelay(100);
       endGame();
       lose();
       break;
@@ -128,7 +130,8 @@ void Game::moveDragon() {
   for (auto &d : dragons) {
     if (!d.isFire()) {
       int side = rand() % 4;
-      if (!collisionForDragon(d.getCoord_Y() + m[side][0], d.getCoord_X() + m[side][1])) {
+      if (!collisionForDragon(d.getCoord_Y() + m[side][0],
+          d.getCoord_X() + m[side][1])) {
         this->map[d.getCoord_Y()][d.getCoord_X()] = sym_empty;
         d.setCoord(d.getCoord_Y() + m[side][0], d.getCoord_X() + m[side][1]);
         this->map[d.getCoord_Y()][d.getCoord_X()] = sym_dragon;
@@ -288,7 +291,6 @@ void Game::killDragon(int y, int x) {
 }
 
 void Game::makeDragonFire(Dragon* dragon) {
-
   if (!tryRandomDragonFire(dragon)) {
     int s = 0;
     if (isMakingFire(dragon->getCoord_Y() - 1, dragon->getCoord_X(), s++)) {
@@ -311,22 +313,10 @@ bool Game::tryRandomDragonFire(Dragon *dragon) {
     (s == 3 && isMakingFire(dragon->getCoord_Y(), dragon->getCoord_X() - 1, s));
 }
 
-void Game::makeKnightMagic(int up, int down, int left, int right) {
-  if (knight.getMP() > 0) {
-    int s;
-    if (up != 0) {
-      s = 0;
-    } else if (right != 0) {
-      s = 1;
-    } else if (down != 0) {
-      s = 2;
-    } else {
-      s = 3;
-    }
-    if (isMakingFire(knight.getCoord_Y() + up + down,
-                     knight.getCoord_X() + left + right, s)) {
-      knight.setMP(knight.getMP() - 1);
-    }
+void Game::makeKnightMagic(int py, int px, int side) {
+  if (isMakingFire(knight.getCoord_Y() + py,
+      knight.getCoord_X() + px, side)) {
+    knight.setMP(knight.getMP() - 1);
   }
 }
 
