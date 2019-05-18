@@ -8,8 +8,8 @@
 void Game::loadMap() {
   std::ifstream file_in("map.txt");
   int i = 0;
+  std:: string str;
   while (!file_in.eof()) {
-    std:: string str;
     file_in >> str;
     this->map.emplace_back();
     for (int j = 0; j < str.size(); ++j) {
@@ -68,7 +68,7 @@ void Game::start() {
       int down = (command == KEY_DOWN);
       int left = -1 * (command == KEY_LEFT);
       int right = (command == KEY_RIGHT);
-      moveKnight(up, down, left, right);
+      moveKnight(up + down, left + right);
     } else if (command == conf.configJson["Key"]["w"] ||
                command == conf.configJson["Key"]["s"] ||
                command == conf.configJson["Key"]["a"] ||
@@ -115,12 +115,12 @@ void Game::moveZombies() {
   }
 }
 
-void Game::moveKnight(int up, int down, int left, int right) {
-  if (!collisionForKnight(knight.getCoord_Y() + up + down,
-      knight.getCoord_X() + left + right)) {
+void Game::moveKnight(int py, int px) {
+  if (!collisionForKnight(knight.getCoord_Y() + py,
+      knight.getCoord_X() + px)) {
     this->map[knight.getCoord_Y()][knight.getCoord_X()] = sym_empty;
-    knight.setCoord(knight.getCoord_Y() + up + down,
-                    knight.getCoord_X() + left + right);
+    knight.setCoord(knight.getCoord_Y() + py,
+                    knight.getCoord_X() + px);
     this->map[knight.getCoord_Y()][knight.getCoord_X()] = sym_knight;
   }
 }
@@ -314,7 +314,7 @@ bool Game::tryRandomDragonFire(Dragon *dragon) {
 }
 
 void Game::makeKnightMagic(int py, int px, int side) {
-  if (isMakingFire(knight.getCoord_Y() + py,
+  if (knight.getMP() > 0 && isMakingFire(knight.getCoord_Y() + py,
       knight.getCoord_X() + px, side)) {
     knight.setMP(knight.getMP() - 1);
   }
