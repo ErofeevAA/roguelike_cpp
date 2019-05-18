@@ -32,12 +32,12 @@ class Game {
   void moveZombies();
   void moveDragon();
   void moveFire();
-  void moveKnight(int up, int down, int left, int right);
+  void moveKnight(int py, int px);
   void killZombie(int y, int x);
   void killFire(int y, int x);
   void killDragon(int y, int x);
   void makeDragonFire(Dragon* dragon);
-  void makeKnightMagic(int up, int down, int left, int right);
+  void makeKnightMagic(int px, int py, int side);
   void drawGame();
   void endGame();
   void win();
