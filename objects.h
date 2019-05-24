@@ -1,164 +1,216 @@
+#include "config_reader.h"
+
+#include <ncurses.h>
+
+using std::vector;
+
+class Knight;
+class Zombie;
+class Dragon;
+class Fire;
+//class Princess;
+//class Wall;
+//class AidKid;
+//class Empty;
+
+
 class MapObject {
+ protected:
+  int y = 0;
+  int x = 0;
+  char symbol = '.';
+  bool dead = false;
+  bool ismoved  = false;
+
+  void setCoord(int y, int x);
+
+  void setSymbol(std::string s);
+
  public:
-  //virtual void setCoord(int x, int y) = 0;
-  virtual int getCoord_X() = 0;
-  virtual int getCoord_Y() = 0;
+  ConfigReader c = ConfigReader();
+  MapObject() = default;
+
+
+
+  //int getX();
+  //int getY();
+
+  virtual void move(vector<vector<std::shared_ptr<MapObject>>> &m) {}
+
+  virtual void collide(Knight &k) {}
+  virtual void collide(Zombie &z) {}
+  virtual void collide(Dragon &d) {}
+  virtual void collide(Fire &f) {}
+  //virtual void collide(Princess &p) {}
+  //virtual void collide(Wall &p) {}
+  //virtual void collide(AidKid &a) {}
+  //virtual void collide(Empty &e) {}
+
+  //virtual void collide(MapObject &m) {}
+
+  char getSymbol() const;
+
+  bool isDead();
+
+  void deadObj();
+
+  void setMoved() {this->ismoved = true;}
+
 };
 
-class Knight : MapObject {
+
+class Knight : public MapObject {
  private:
-  int x_ = 0;
-  int y_ = 0;
-  int max_hp = 10;
-  int max_mp = 10;
-  int hp_ = max_hp;
-  int mp_ = max_mp;
+  int px = 0;
+  int py = 0;
+
+  int f_y = 0;
+  int f_x = 0;
+  int side_f = 0;
+
+  int hp = 0;
+  int mp = 0;
+
+  int maxHP = 0;
+
+  void useMP();
+
+  bool canUseMP();
+
  public:
-  Knight(int hp, int mp) {
-    this->hp_ = hp;
-    this->mp_ = mp;
-    this->max_hp = hp;
-    this->max_mp = mp;
-  }
-  void setCoord(int y, int x) {
-    this->x_ = x;
-    this->y_ = y;
-  }
-  int getCoord_X() override{
-    return this->x_;
-  }
-  int getCoord_Y() override{
-    return this->y_;
-  }
-  int getMP() {
-    return this->mp_;
-  }
-  int getHP() {
-    return this->hp_;
-  }
-  int getMaxHP() {
-    return this->max_hp;
-  }
-  void setMP(int mp) {
-    this->mp_ = mp;
-  }
-  void wasAttacked(int d) {
-    this->hp_ -= d;
-  }
-  void upHP () {
-    if (this->hp_ < this->max_hp) {
-      this->hp_ += 1;
-    }
-  }
+  Knight(int y, int x, int hp, int mp);
+
+  //void setCoord(int y, int x);
+
+  void move(vector<vector<std::shared_ptr<MapObject>>> &m) override;
+
+  void makeFire(vector<vector<std::shared_ptr<MapObject>>> &m);
+
+  void collide(Zombie &z) override;
+  void collide(Dragon &d) override;
+  void collide(Fire &f) override;
+
+  //void collide(MapObject &m) override;
+
+  void wasAttacked(int dam);
+
+  bool canUpHP();
+
+  void upHP();
+
+  int getHP();
+  int getMP();
+
+  void setSide(int py, int px);
+  void setSideMagic(int s);
 };
 
-class Zombie : MapObject {
- private:
-  int x_ = 0;
-  int y_ = 0;
+class Zombie : public MapObject {
  public:
-  //Zombie(int y, int x) {
-  //  this->x_ = x;
-  //  this->y_ = y;
-  //}
- public:
-  void setCoord(int y, int x) {
-    this->x_ = x;
-    this->y_ = y;
-  }
-  int getCoord_X() override {
-    return this->x_;
-  }
-  int getCoord_Y() override {
-    return this->y_;
-  }
-  int getDamage() {
-    return 1;
-  }
+  Zombie(int y, int x);
+
+  //void setCoord(int y, int x) override;
+
+  void move(vector<vector<std::shared_ptr<MapObject>>> &m) override;
+
+  void collide(Knight &k) override;
+  void collide(Dragon &d) override;
+  void collide(Fire &f) override;
+
+  //void collide(MapObject &m) override;
+
+  int getDamage();
 };
 
-class Dragon : MapObject{
+class Dragon : public MapObject {
  private:
-  int x_ = 0;
-  int y_ = 0;
-  bool fire_ = false;
+  bool set_fire;
  public:
-  void setCoord(int y, int x) {
-    this->x_ = x;
-    this->y_ = y;
-  }
-  int getCoord_X() override {
-    return this->x_;
-  }
-  int getCoord_Y() override {
-    return this->y_;
-  }
-  bool isFire() {
-    return this->fire_;
-  }
-  void changeFire() {
-    this->fire_ = !fire_;
-  }
-  int getDamage() {
-    return 2;
-  }
+  Dragon(int y, int x);
+
+  //void setCoord(int y, int x) override;
+
+  void move(vector<vector<std::shared_ptr<MapObject>>> &m) override;
+
+  void makeFire(vector<vector<std::shared_ptr<MapObject>>> &m);
+
+  void collide(Knight &k) override;
+  void collide(Fire &f) override;
+
+  //void collide(MapObject &m) override;
+
+  int getDamage();
 };
 
-class Fire : MapObject{
+class Fire : public MapObject {
  private:
-  int x_ = 0;
-  int y_ = 0;
-  int hp_ = 3;
-  int side_ = 0;
+  int side;
  public:
-  explicit Fire(int hp) {
-    this->hp_ = hp;
-  }
-  void setCoord(int y, int x) {
-    this->x_ = x;
-    this->y_ = y;
-    this->hp_ -= 1;
-  }
-  void setSide(int side) {
-    this->side_ = side;
-  }
-  int getCoord_X() override {
-    return this->x_;
-  }
-  int getCoord_Y() override {
-    return this->y_;
-  }
-  int getDamage() {
-    return 1;
-  }
-  bool isDestroy() {
-    return this->hp_ == 0;
-  }
-  int getSide(){
-    return this->side_;
-  }
+  Fire(int y, int x, int s);
+
+  //void setCoord(int y, int x) override;
+
+  void move(vector<vector<std::shared_ptr<MapObject>>> &m) override;
+
+  void collide(Knight &k) override;
+  void collide(Dragon &d) override;
+  void collide(Fire &f) override;
+
+  //void collide(MapObject &m) override;
+
+  int getDamage();
 };
 
-class Princess /*: MapObject*/ {
- private:
-  //int x_ = 0;
-  //int y_ = 0;
-  bool is_getting = false;
+class Princess : public MapObject{
+  bool is_get = false;
  public:
-  //Princess(int y, int x) {
-  //  this->y_ = y;
-  //  this->x_ = x;
-  //}
-  //int getCoord_X() override {
-  //  return this->x_;
-  //}
-  //int getCoord_Y() override {
-  //  return this->y_;
-  //}
-  bool isGetting() {
-    return this->is_getting;
-  }
-  void setGetting() {
-    this->is_getting = true;
-  }
+  Princess();
+
+  //void setCoord(int y, int x) override {}
+
+  bool isGetting();
+
+  void setGetting();
+
+  void collide(Knight &k) override;
+  void collide(Fire &f) override;
+
+  //void collide(MapObject &m) override;
+};
+
+class Wall : public MapObject {
+ public:
+  Wall();
+
+  //void setCoord(int y, int x) override {}
+
+  void collide(Fire &f) override;
+
+  //void collide(MapObject &m) override;
+};
+
+class AidKid : public MapObject {
+ public:
+  AidKid();
+
+  //void setCoord(int y, int x) override {}
+
+  void collide(Knight &k) override;
+  void collide(Fire &f) override;
+
+  //void collide(MapObject &m) override;
+};
+
+class Empty : public MapObject {
+ public:
+  Empty();
+
+  //void setCoord(int y, int x) override {};
+
+  void collide(Knight &k) override;
+  void collide(Zombie &z) override;
+  void collide(Dragon &d) override;
+  void collide(Fire &f) override;
+
+  //void collide(MapObject &m) override;
 };

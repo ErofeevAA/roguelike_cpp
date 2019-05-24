@@ -7,36 +7,36 @@
   "esc": 27
  },
  "Side" : {
- "up": 0,
- "right": 1,
- "down": 2,
- "left": 3
+  "up": 0,
+  "right": 1,
+  "down": 2,
+  "left": 3
  },
  "Wall": {
- "symbol": 35
+  "symbol": "#"
  },
  "Empty": {
- "symbol": 46
+  "symbol": "."
  },
  "Knight": {
- "hp": 9,
- "mp": 9,
- "symbol": 75
+  "hp": 9,
+  "mp": 9,
+  "symbol": "K"
  },
  "Zombie": {
- "symbol": 90
+  "symbol": "Z"
  },
  "Dragon": {
- "symbol": 68
+  "symbol": "D"
  },
  "Princess": {
- "symbol": 80
+  "symbol": "P"
  },
  "Fire": {
-  "hp": 3,
- "symbol": 42
+  "hp": 15,
+  "symbol": "*"
  },
- "Aidkit": {
- "symbol": 65
+ "AidKit": {
+  "symbol": "A"
  }
 }

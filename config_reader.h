@@ -5,7 +5,7 @@ class ConfigReader {
  public:
   nlohmann::json configJson;
   ConfigReader() {
-    std::ifstream stream("config.json");
+    std::ifstream stream("/home/artyom/CLionProjects/cats/roguelike/config.json");
     stream >> configJson;
   }
 };
